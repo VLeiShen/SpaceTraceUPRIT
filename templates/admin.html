@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11110f">
+  <title>Panel editorial | Space Trace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}?v=54">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=1">
+</head>
+<body class="admin-page">
+  <main class="admin-shell">
+    <header class="admin-topbar">
+      <a class="admin-back" href="{{ url_for('home') }}">← Space Trace</a>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="admin-button subtle" type="submit">Cerrar sesión</button>
+      </form>
+    </header>
+    <header class="admin-heading">
+      <span class="section-kicker">SPACE TRACE · PANEL EDITORIAL</span>
+      <h1>Hola, {{ current_user.username }}</h1>
+      <p>Rol: <strong>{{ "Administrador" if current_user.role == "admin" else "Colaborador" }}</strong>. Gestiona los aportes informativos del archivo.</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list" role="status">
+          {% for category, message in messages %}
+            <p class="flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="admin-card">
+      <div class="admin-section-heading">
+        <div>
+          <span class="section-kicker">CONTENIDO DEL SITIO</span>
+          <h2>Archivo editorial</h2>
+        </div>
+        <a class="admin-button primary" href="{{ url_for('create_content') }}">＋ Añadir contenido</a>
+      </div>
+      <p class="muted">Los colaboradores pueden crear, editar y eliminar aportes en español e inglés. El contenido publicado aparece en la sección «Archivo editorial» del sitio.</p>
+      {% if editorial_items %}
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Entrada</th><th>Sección</th><th>Actualizado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              {% for item in editorial_items %}
+                <tr>
+                  <td><strong>{{ item.title_es }}</strong><small>Por {{ item.author }}</small></td>
+                  <td>{{ {"missions":"Misiones","timeline":"Cronología","science":"Ciencia","media":"Medios","general":"General"}[item.section] }}</td>
+                  <td>{{ item.updated_at }}</td>
+                  <td class="table-actions">
+                    <a class="admin-button subtle" href="{{ url_for('edit_content', item_id=item.id) }}">Editar</a>
+                    <form method="post" action="{{ url_for('delete_content', item_id=item.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button class="admin-button danger" type="submit">Eliminar</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">Todavía no hay aportes editoriales. Crea el primero para publicarlo en el sitio.</p>
+      {% endif %}
+    </section>
+
+    {% if current_user.role == "admin" %}
+      <section class="admin-card">
+        <div class="admin-section-heading">
+          <div>
+            <span class="section-kicker">CONTROL DE ACCESO</span>
+            <h2>Equipo y permisos</h2>
+          </div>
+        </div>
+        <form class="inline-create form-stack" method="post" action="{{ url_for('create_collaborator') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <h3>Añadir colaborador</h3>
+          <div class="form-grid">
+            <label>Usuario<input name="username" minlength="3" maxlength="32" required></label>
+            <label>Correo<input name="email" type="email" maxlength="254" required></label>
+            <label>Contraseña temporal (10+ caracteres)<input name="password" type="password" minlength="10" required></label>
+          </div>
+          <button class="admin-button primary" type="submit">Crear colaborador</button>
+        </form>
+
+        <h3>Solicitudes pendientes ({{ pending_users|length }})</h3>
+        {% if pending_users %}
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Usuario</th><th>Correo</th><th>Solicitud</th><th>Acción</th></tr></thead>
+              <tbody>
+                {% for user in pending_users %}
+                  <tr>
+                    <td>{{ user.username }}</td><td>{{ user.email }}</td><td>{{ user.created_at }}</td>
+                    <td>
+                      <form method="post" action="{{ url_for('manage_user', user_id=user.id, action='approve') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button class="admin-button primary" type="submit">Aprobar como colaborador</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-state">No hay solicitudes pendientes.</p>
+        {% endif %}
+
+        <h3>Cuentas</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Permisos</th></tr></thead>
+            <tbody>
+              {% for user in collaborators %}
+                <tr>
+                  <td>{{ user.username }}<small>{{ user.email }}</small></td>
+                  <td>{{ "Administrador" if user.role == "admin" else "Colaborador" }}</td>
+                  <td>{{ {"active":"Activo","disabled":"Desactivado","pending":"Pendiente"}[user.status] }}</td>
+                  <td class="table-actions">
+                    {% if user.status == "active" and user.role == "collaborator" %}
+                      <form method="post" action="{{ url_for('manage_user', user_id=user.id, action='promote') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="admin-button subtle" type="submit">Hacer administrador</button></form>
+                    {% elif user.status == "active" and user.role == "admin" %}
+                      <form method="post" action="{{ url_for('manage_user', user_id=user.id, action='demote') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="admin-button subtle" type="submit">Hacer colaborador</button></form>
+                    {% endif %}
+                    {% if user.status == "active" %}
+                      <form method="post" action="{{ url_for('manage_user', user_id=user.id, action='disable') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="admin-button danger" type="submit">Desactivar</button></form>
+                    {% elif user.status == "disabled" %}
+                      <form method="post" action="{{ url_for('manage_user', user_id=user.id, action='enable') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="admin-button primary" type="submit">Reactivar</button></form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>

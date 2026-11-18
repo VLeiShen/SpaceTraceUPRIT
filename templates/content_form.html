@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11110f">
+  <title>{{ "Editar" if editing else "Añadir" }} contenido | Space Trace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}?v=54">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=1">
+</head>
+<body class="admin-page">
+  <main class="admin-shell">
+    <a class="admin-back" href="{{ url_for('admin_panel') }}">← Volver al panel</a>
+    <header class="admin-heading">
+      <span class="section-kicker">SPACE TRACE · CONTENIDO</span>
+      <h1>{{ "Editar entrada" if editing else "Añadir entrada informativa" }}</h1>
+      <p>El contenido se muestra en español o inglés según el idioma elegido por la persona visitante.</p>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list" role="status">{% for category, message in messages %}<p class="flash {{ category }}">{{ message }}</p>{% endfor %}</div>
+      {% endif %}
+    {% endwith %}
+    <form class="admin-card form-stack" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Sección
+        <select name="section" required>
+          {% for value, label in [("missions","Misiones"),("timeline","Cronología"),("science","Ciencia"),("media","Medios"),("general","General")] %}
+            <option value="{{ value }}" {{ "selected" if item.get("section") == value else "" }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="form-grid">
+        <label>Título en español<input name="title_es" maxlength="160" value="{{ item.get('title_es', '') }}" required></label>
+        <label>Title in English<input name="title_en" maxlength="160" value="{{ item.get('title_en', '') }}" required></label>
+      </div>
+      <div class="form-grid">
+        <label>Texto en español<textarea name="body_es" rows="6" maxlength="5000" required>{{ item.get('body_es', '') }}</textarea></label>
+        <label>Text in English<textarea name="body_en" rows="6" maxlength="5000" required>{{ item.get('body_en', '') }}</textarea></label>
+      </div>
+      <div class="form-grid">
+        <label>URL de imagen (opcional)<input name="image_url" type="url" maxlength="2048" value="{{ item.get('image_url', '') }}" placeholder="https://..."></label>
+        <label>URL de fuente (opcional)<input name="source_url" type="url" maxlength="2048" value="{{ item.get('source_url', '') }}" placeholder="https://..."></label>
+      </div>
+      <div class="form-actions">
+        <a class="admin-button subtle" href="{{ url_for('admin_panel') }}">Cancelar</a>
+        <button class="admin-button primary" type="submit">{{ "Guardar cambios" if editing else "Publicar entrada" }}</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

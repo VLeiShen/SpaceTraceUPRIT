@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11110f">
+  <title>Unirse | Space Trace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}?v=54">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=1">
+</head>
+<body class="admin-page">
+  <main class="admin-shell auth-shell">
+    <a class="admin-back" href="{{ url_for('home') }}">← Space Trace</a>
+    <header class="admin-heading">
+      <span class="section-kicker">SPACE TRACE · EQUIPO EDITORIAL</span>
+      <h1>Unirse al archivo</h1>
+      <p>Inicia sesión o solicita una cuenta para colaborar con el contenido informativo.</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list" role="status">
+          {% for category, message in messages %}
+            <p class="flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="auth-tabs" aria-label="Acceso al equipo">
+      <a class="{{ 'is-active' if mode == 'login' else '' }}" href="{{ url_for('join', mode='login') }}">Iniciar sesión</a>
+      <a class="{{ 'is-active' if mode == 'register' else '' }}" href="{{ url_for('join', mode='register') }}">Solicitar registro</a>
+    </div>
+
+    {% if mode == 'register' %}
+      <form class="admin-card form-stack" method="post" action="{{ url_for('join_submit') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="register">
+        <h2>Solicitar una cuenta</h2>
+        <p class="muted">Las cuentas nuevas quedan pendientes hasta que un administrador las apruebe.</p>
+        <label>Nombre de usuario
+          <input name="username" autocomplete="username" minlength="3" maxlength="32" required>
+        </label>
+        <label>Correo electrónico
+          <input name="email" type="email" autocomplete="email" maxlength="254" required>
+        </label>
+        <label>Contraseña
+          <input name="password" type="password" autocomplete="new-password" minlength="10" required>
+        </label>
+        <button class="admin-button primary" type="submit">Enviar solicitud</button>
+      </form>
+    {% else %}
+      <form class="admin-card form-stack" method="post" action="{{ url_for('join_submit') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="login">
+        <h2>Acceso editorial</h2>
+        <label>Nombre de usuario
+          <input name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>Contraseña
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="admin-button primary" type="submit">Iniciar sesión</button>
+      </form>
+    {% endif %}
+  </main>
+</body>
+</html>
