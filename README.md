@@ -13,17 +13,18 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-Sin variables de Turso, la aplicación usa `instance/space_trace.sqlite3` para el desarrollo local. La base local se crea automáticamente.
+Sin variables de Turso, la aplicación usa `instance/space_trace.sqlite3` para el desarrollo local. Al ejecutar `python app.py`, la base local se crea automáticamente.
 
 ## Conectar con Turso (libSQL)
 
 La aplicación detecta `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN` y usa el cliente Python `libsql`. Configura ambas variables en el entorno; no guardes sus valores en el repositorio. La URL debe comenzar con `libsql://`.
 
-El esquema de [schema.sql](schema.sql) se prepara de forma idempotente al iniciar la app. Para crear el primer administrador en la base que utilizará la app, ejecuta el comando con las variables de Turso ya configuradas:
+El esquema de [schema.sql](schema.sql) se prepara de forma idempotente con el comando `init-db`. Para inicializar la base y crear el primer administrador en Turso, ejecuta estos comandos con las variables de Turso ya configuradas:
 
 ```powershell
 $env:TURSO_DATABASE_URL = "libsql://tu-base.turso.io"
 $env:TURSO_AUTH_TOKEN = "tu-token-secreto"
+.\.venv\Scripts\flask.exe --app app init-db
 .\.venv\Scripts\flask.exe --app app create-admin
 ```
 

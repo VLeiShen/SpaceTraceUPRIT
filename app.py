@@ -451,9 +451,7 @@ def create_admin_command():
     click.echo("Administrador creado.")
 
 
-with app.app_context():
-    init_db()
-
-
 if __name__ == "__main__":
+    with app.app_context():
+        init_db()
     app.run()
